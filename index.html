@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Cristina Araujo - Route Optimizer</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Login Modal -->
+        <div id="loginModal" class="modal modal-login">
+            <div class="modal-content modal-login-content">
+                <div class="login-header">
+                    <div class="login-logo">
+                        <div class="logo-icon">🚚</div>
+                        <h2 class="login-title">CRISTINA ARAUJO</h2>
+                        <p class="login-subtitle">Route Optimizer</p>
+                    </div>
+                </div>
+                <div class="login-body">
+                    <div id="loginFormContainer">
+                        <div class="form-group">
+                            <label for="loginPassword">Palavra-passe:</label>
+                            <input type="password" id="loginPassword" class="input input-large" placeholder="Introduza a palavra-passe">
+                        </div>
+                        <button id="btnLogin" class="btn btn-primary btn-full btn-large">ENTRAR</button>
+                        <p id="loginError" class="login-error hidden">Palavra-passe incorreta</p>
+                    </div>
+                    <div id="setupPasswordContainer" class="hidden">
+                        <p class="setup-message">Bem-vindo! Defina uma palavra-passe para proteger o acesso.</p>
+                        <div class="form-group">
+                            <label for="setupPassword">Nova palavra-passe:</label>
+                            <input type="password" id="setupPassword" class="input input-large" placeholder="Crie uma palavra-passe">
+                        </div>
+                        <div class="form-group">
+                            <label for="setupPasswordConfirm">Confirmar palavra-passe:</label>
+                            <input type="password" id="setupPasswordConfirm" class="input input-large" placeholder="Confirme a palavra-passe">
+                        </div>
+                        <button id="btnSetupPassword" class="btn btn-primary btn-full btn-large">DEFINIR PALAVRA-PASSE</button>
+                        <p id="setupError" class="login-error hidden">As palavras-passe não coincidem</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App Content (hidden until login) -->
+        <div id="mainApp" class="hidden">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-company">CRISTINA ARAUJO</div>
+                <h1 class="header-title">ROUTE OPTIMIZER</h1>
+                <p class="header-subtitle">Planeia a tua rota de forma mais eficiente</p>
+            </div>
+            <div class="header-actions">
+                <button id="btnManageClients" class="btn btn-secondary">GERIR CLIENTES</button>
+                <button id="btnNewRoute" class="btn btn-primary">+ NOVA ROTA</button>
+                <button id="btnHistory" class="btn btn-secondary">HISTÓRICO</button>
+                <button id="btnLogout" class="btn btn-secondary">SAIR</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Start Point Section -->
+            <section class="section start-point-section">
+                <h2 class="section-title">PONTO DE PARTIDA</h2>
+                <div class="start-point-input">
+                    <input type="text" id="startPoint" class="input input-large" placeholder="Introduzir morada, código postal ou local">
+                    <button id="btnUseCurrentLocation" class="btn btn-secondary btn-icon" title="Usar localização atual">
+                        📍
+                    </button>
+                    <button id="btnSelectStartPoint" class="btn btn-secondary btn-icon" title="Selecionar local guardado">
+                        🏠
+                    </button>
+                </div>
+                <div id="startPointCoords" class="coords-display"></div>
+            </section>
+
+            <!-- Stops Section -->
+            <section class="section stops-section">
+                <div class="section-header">
+                    <h2 class="section-title">PARAGENS</h2>
+                    <div class="section-actions">
+                        <button id="btnSelectClients" class="btn btn-primary">+ SELECIONAR CLIENTES</button>
+                        <button id="btnAddStop" class="btn btn-secondary">+ ADICIONAR PARAGEM MANUAL</button>
+                    </div>
+                </div>
+                <div id="stopsList" class="stops-list">
+                    <!-- Stops will be added here dynamically -->
+                </div>
+            </section>
+
+            <!-- Optimization Section -->
+            <section class="section optimization-section">
+                <div class="optimization-controls">
+                    <div class="control-group">
+                        <label for="stopTime">Tempo por entrega (min):</label>
+                        <input type="number" id="stopTime" class="input input-small" value="5" min="1" max="60">
+                    </div>
+                    <div class="control-group">
+                        <label for="startTime">Hora de início:</label>
+                        <input type="time" id="startTime" class="input input-small">
+                    </div>
+                    <div class="control-group">
+                        <label>
+                            <input type="checkbox" id="optimizeOrder" checked>
+                            Otimizar ordem das paragens
+                        </label>
+                    </div>
+                </div>
+                <button id="btnOptimize" class="btn btn-primary btn-large">CALCULAR ROTA</button>
+            </section>
+
+            <!-- Results Section -->
+            <div id="resultsSection" class="hidden">
+                <section class="section results-section">
+                    <h2 class="section-title">RESULTADOS</h2>
+                    
+                    <div class="results-summary">
+                        <div class="summary-card">
+                            <div class="summary-label">Distância Total</div>
+                            <div class="summary-value" id="totalDistance">0 km</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-label">Tempo Estimado</div>
+                            <div class="summary-value" id="totalTime">0 min</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-label">Número de Paragens</div>
+                            <div class="summary-value" id="totalStops">0</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-label">Estimativa Portagens</div>
+                            <div class="summary-value" id="tollCost">0 €</div>
+                        </div>
+                    </div>
+
+                    <div class="optimized-route">
+                        <h3 class="subsection-title">Rota Calculada</h3>
+                        <div id="optimizedStops" class="optimized-stops">
+                            <!-- Optimized stops will be added here -->
+                        </div>
+                    </div>
+
+                    <div class="results-actions">
+                        <button id="btnExport" class="btn btn-secondary">EXPORTAR ROTA</button>
+                        <button id="btnSaveRoute" class="btn btn-secondary">GUARDAR ROTA</button>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Modals -->
+        <!-- Add Stop Modal -->
+        <div id="addStopModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">ADICIONAR PARAGEM</h3>
+                    <button class="modal-close" id="closeAddStopModal">&times;</button>
+                </div>
+                <form id="addStopForm" class="modal-body">
+                    <div class="form-group">
+                        <label for="stopName">Nome do cliente:</label>
+                        <input type="text" id="stopName" class="input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="stopAddress">Morada:</label>
+                        <input type="text" id="stopAddress" class="input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="stopPostalCode">Código Postal:</label>
+                        <input type="text" id="stopPostalCode" class="input">
+                    </div>
+                    <div class="form-group">
+                        <label for="stopCity">Localidade:</label>
+                        <input type="text" id="stopCity" class="input">
+                    </div>
+                    <div class="form-group">
+                        <label for="stopNotes">Notas:</label>
+                        <textarea id="stopNotes" class="input textarea" rows="2"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="stopLat">Latitude (opcional):</label>
+                        <input type="text" id="stopLat" class="input">
+                    </div>
+                    <div class="form-group">
+                        <label for="stopLon">Longitude (opcional):</label>
+                        <input type="text" id="stopLon" class="input">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">ADICIONAR</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Import Modal -->
+        <div id="importModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">IMPORTAR CLIENTES</h3>
+                    <button class="modal-close" id="closeImportModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="importFile">Ficheiro (CSV ou XLSX):</label>
+                        <input type="file" id="importFile" class="input" accept=".csv,.xlsx,.xls">
+                    </div>
+                    <div id="columnMapping" class="column-mapping hidden">
+                        <h4>Mapeamento de colunas</h4>
+                        <div class="form-group">
+                            <label for="mapName">Nome:</label>
+                            <select id="mapName" class="input"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="mapAddress">Morada:</label>
+                            <select id="mapAddress" class="input"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="mapPostalCode">Código Postal:</label>
+                            <select id="mapPostalCode" class="input"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="mapCity">Localidade:</label>
+                            <select id="mapCity" class="input"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="mapNotes">Notas:</label>
+                            <select id="mapNotes" class="input"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="mapLat">Latitude:</label>
+                            <select id="mapLat" class="input"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="mapLon">Longitude:</label>
+                            <select id="mapLon" class="input"></select>
+                        </div>
+                    </div>
+                    <button id="btnProcessImport" class="btn btn-primary btn-full">IMPORTAR</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Modal -->
+        <div id="historyModal" class="modal hidden">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h3 class="modal-title">HISTÓRICO</h3>
+                    <button class="modal-close" id="closeHistoryModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="historyList" class="history-list">
+                        <!-- History items will be added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Route Modal -->
+        <div id="saveRouteModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">GUARDAR ROTA</h3>
+                    <button class="modal-close" id="closeSaveRouteModal">&times;</button>
+                </div>
+                <form id="saveRouteForm" class="modal-body">
+                    <div class="form-group">
+                        <label for="routeName">Nome da rota:</label>
+                        <input type="text" id="routeName" class="input" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">GUARDAR</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Manage Clients Modal -->
+        <div id="manageClientsModal" class="modal hidden">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h3 class="modal-title">GERIR CLIENTES</h3>
+                    <button class="modal-close" id="closeManageClientsModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="clients-actions">
+                        <button id="btnAddClient" class="btn btn-primary">+ ADICIONAR CLIENTE</button>
+                        <button id="btnImportClients" class="btn btn-secondary">IMPORTAR CLIENTES</button>
+                        <button id="btnExportClients" class="btn btn-secondary">EXPORTAR CLIENTES</button>
+                    </div>
+                    <div class="search-container">
+                        <input type="text" id="searchClients" class="input" placeholder="🔍 Procurar cliente por nome...">
+                    </div>
+                    <div id="clientsList" class="clients-list">
+                        <!-- Clients will be added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Client Modal -->
+        <div id="addClientModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">ADICIONAR CLIENTE</h3>
+                    <button class="modal-close" id="closeAddClientModal">&times;</button>
+                </div>
+                <form id="addClientForm" class="modal-body">
+                    <div class="form-group">
+                        <label for="clientName">Nome do cliente:</label>
+                        <input type="text" id="clientName" class="input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="clientAddress">Morada:</label>
+                        <input type="text" id="clientAddress" class="input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="clientPostalCode">Código Postal:</label>
+                        <input type="text" id="clientPostalCode" class="input">
+                    </div>
+                    <div class="form-group">
+                        <label for="clientCity">Localidade:</label>
+                        <input type="text" id="clientCity" class="input">
+                    </div>
+                    <div class="form-group">
+                        <label for="clientPhone">Telemóvel:</label>
+                        <input type="text" id="clientPhone" class="input">
+                    </div>
+                    <div class="form-group">
+                        <label for="clientEmail">Email:</label>
+                        <input type="text" id="clientEmail" class="input">
+                    </div>
+                    <div class="form-group">
+                        <label for="clientNotes">Notas:</label>
+                        <textarea id="clientNotes" class="input textarea" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">ADICIONAR</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Select Clients Modal -->
+        <div id="selectClientsModal" class="modal hidden">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h3 class="modal-title">SELECIONAR CLIENTES PARA ROTA</h3>
+                    <button class="modal-close" id="closeSelectClientsModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="select-clients-actions">
+                        <button id="btnSelectAllClients" class="btn btn-secondary">SELECIONAR TODOS</button>
+                        <button id="btnDeselectAllClients" class="btn btn-secondary">DESMARCAR TODOS</button>
+                        <button id="btnAddSelectedClients" class="btn btn-primary">ADICIONAR SELECIONADOS</button>
+                    </div>
+                    <div class="search-container">
+                        <input type="text" id="searchSelectClients" class="input" placeholder="🔍 Procurar cliente por nome...">
+                    </div>
+                    <div id="selectClientsList" class="clients-list">
+                        <!-- Clients checkboxes will be added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Select Start Point Modal -->
+        <div id="selectStartPointModal" class="modal hidden">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h3 class="modal-title">SELECIONAR PONTO DE PARTIDA</h3>
+                    <button class="modal-close" id="closeSelectStartPointModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="select-clients-actions">
+                        <button id="btnAddNewStartPoint" class="btn btn-primary">+ ADICIONAR NOVO LOCAL</button>
+                    </div>
+                    <div class="search-container">
+                        <input type="text" id="searchStartPoints" class="input" placeholder="🔍 Procurar local por nome...">
+                    </div>
+                    <div id="startPointsList" class="clients-list">
+                        <!-- Start points will be added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Start Point Modal -->
+        <div id="addStartPointModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">ADICIONAR LOCAL DE PARTIDA</h3>
+                    <button class="modal-close" id="closeAddStartPointModal">&times;</button>
+                </div>
+                <form id="addStartPointForm" class="modal-body">
+                    <div class="form-group">
+                        <label for="startPointName">Nome do local:</label>
+                        <input type="text" id="startPointName" class="input" required placeholder="Ex: Armazém, Escritório, Casa">
+                    </div>
+                    <div class="form-group">
+                        <label for="startPointAddress">Morada:</label>
+                        <input type="text" id="startPointAddress" class="input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="startPointPostalCode">Código Postal:</label>
+                        <input type="text" id="startPointPostalCode" class="input">
+                    </div>
+                    <div class="form-group">
+                        <label for="startPointCity">Localidade:</label>
+                        <input type="text" id="startPointCity" class="input">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">ADICIONAR</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay hidden">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p id="loadingText">A processar...</p>
+            </div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toastContainer" class="toast-container"></div>
+
+        <!-- Privacy Notice -->
+        <div class="privacy-notice">
+            📁 Os teus clientes e rotas são armazenados localmente neste dispositivo.
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/storage.js"></script>
+    <script src="js/geocoder.js"></script>
+    <script src="js/routing.js"></script>
+    <script src="js/optimizer.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
